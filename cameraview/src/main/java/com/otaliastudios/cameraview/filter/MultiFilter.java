@@ -1,5 +1,7 @@
 package com.otaliastudios.cameraview.filter;
 
+import android.content.Context;
+import android.net.Uri;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 
@@ -12,6 +14,10 @@ import com.otaliastudios.opengl.program.GlProgram;
 import com.otaliastudios.opengl.program.GlTextureProgram;
 import com.otaliastudios.opengl.texture.GlFramebuffer;
 import com.otaliastudios.opengl.texture.GlTexture;
+
+import org.libpag.PAGFile;
+import org.libpag.PAGPlayer;
+import org.libpag.PAGSurface;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,52 +32,84 @@ import java.util.Map;
  * - the first filter reads from input frames
  * - the second filters reads the output of the first
  * And so on, until the last filter which will read from the previous and write to the real output.
- *
+ * <p>
  * New filters can be added at any time through {@link #addFilter(Filter)}, but currently they
  * can not be removed because we can not easily ensure that they would be correctly released.
- *
+ * <p>
  * The {@link MultiFilter} does also implement {@link OneParameterFilter} and
  * {@link TwoParameterFilter}, dispatching all the parameter calls to child filters,
  * assuming they support it.
- *
+ * <p>
  * There are some important technical caveats when using {@link MultiFilter}:
  * - each child filter requires the allocation of a GL framebuffer. Using a large number of filters
- *   will likely cause memory issues (e.g. https://stackoverflow.com/q/6354208/4288782).
+ * will likely cause memory issues (e.g. https://stackoverflow.com/q/6354208/4288782).
  * - some of the children need to write into {@link GLES20#GL_TEXTURE_2D} instead of
- *   {@link GLES11Ext#GL_TEXTURE_EXTERNAL_OES}! To achieve this, we replace samplerExternalOES
- *   with sampler2D in your fragment shader code. This might cause issues for some shaders.
+ * {@link GLES11Ext#GL_TEXTURE_EXTERNAL_OES}! To achieve this, we replace samplerExternalOES
+ * with sampler2D in your fragment shader code. This might cause issues for some shaders.
  */
 @SuppressWarnings("unused")
 public class MultiFilter implements Filter, OneParameterFilter, TwoParameterFilter {
 
     @VisibleForTesting
     static class State {
-        @VisibleForTesting boolean isProgramCreated = false;
-        @VisibleForTesting boolean isFramebufferCreated = false;
+        @VisibleForTesting
+        boolean isProgramCreated = false;
+        @VisibleForTesting
+        boolean isFramebufferCreated = false;
         private boolean sizeChanged = false;
-        @VisibleForTesting Size size = null;
+        @VisibleForTesting
+        Size size = null;
         private int programHandle = -1;
         private GlFramebuffer outputFramebuffer = null;
         private GlTexture outputTexture = null;
     }
 
-    @VisibleForTesting final List<Filter> filters = new ArrayList<>();
-    @VisibleForTesting final Map<Filter, State> states = new HashMap<>();
+    @VisibleForTesting
+    final List<Filter> filters = new ArrayList<>();
+    @VisibleForTesting
+    final Map<Filter, State> states = new HashMap<>();
     private final Object lock = new Object();
     private Size size = null;
     private float parameter1 = 0F;
     private float parameter2 = 0F;
 
+    private PAGPlayer pagPlayer;
+    private PAGFile pagFile;
+    private Context context;
+    private long duration;
+    private long timestamp = 0;
+    private float timeSpace = 16000f;
+    private long lastTime = -1L;
+    private float progress;
+
+    private void updateProgressValue() {
+        if (this.lastTime == -1) {
+            this.lastTime = System.currentTimeMillis();
+            this.progress = 0.0f;
+        }
+        float currentTimeMillis = ((float) (System.currentTimeMillis() - this.lastTime)) / this.timeSpace;
+        this.progress = currentTimeMillis;
+        if (currentTimeMillis >= 1.0f) {
+            this.progress = 1.0f;
+        }
+    }
+
+
     /**
      * Creates a new group with the given filters.
+     *
      * @param filters children
      */
-    public MultiFilter(@NonNull Filter... filters) {
+    public MultiFilter(Context context, @NonNull Filter... filters) {
         this(Arrays.asList(filters));
+        PAGFile pagFile = PAGFile.Load(context.getAssets(), "Start_Animation_2.pag");
+        duration = pagFile.duration();
+        this.context = context;
     }
 
     /**
      * Creates a new group with the given filters.
+     *
      * @param filters children
      */
     @SuppressWarnings("WeakerAccess")
@@ -136,12 +174,7 @@ public class MultiFilter implements Filter, OneParameterFilter, TwoParameterFilt
 
     private void maybeCreateFramebuffer(@NonNull Filter filter, boolean isFirst, boolean isLast) {
         State state = states.get(filter);
-        if (isLast) {
-            //noinspection ConstantConditions
-            state.sizeChanged = false;
-            return;
-        }
-        //noinspection ConstantConditions
+        assert state != null;
         if (state.sizeChanged) {
             maybeDestroyFramebuffer(filter);
             state.sizeChanged = false;
@@ -154,6 +187,12 @@ public class MultiFilter implements Filter, OneParameterFilter, TwoParameterFilt
                     state.size.getHeight());
             state.outputFramebuffer = new GlFramebuffer();
             state.outputFramebuffer.attach(state.outputTexture);
+
+            PAGSurface pagSurface = PAGSurface.FromTexture(state.outputTexture.getId(), state.size.getWidth(), state.size.getHeight());
+            pagPlayer = new PAGPlayer();
+            pagPlayer.setComposition(pagFile);
+            pagPlayer.setScaleMode(3);
+            pagPlayer.setSurface(pagSurface);
         }
     }
 
@@ -232,7 +271,10 @@ public class MultiFilter implements Filter, OneParameterFilter, TwoParameterFilt
                 maybeCreateProgram(filter, isFirst, isLast);
                 maybeCreateFramebuffer(filter, isFirst, isLast);
 
-                //noinspection ConstantConditions
+                updateProgressValue();
+                pagPlayer.setProgress(progress);
+                pagPlayer.flush();
+
                 GLES20.glUseProgram(state.programHandle);
 
                 // Define the output framebuffer.
@@ -273,7 +315,7 @@ public class MultiFilter implements Filter, OneParameterFilter, TwoParameterFilt
     @Override
     public Filter copy() {
         synchronized (lock) {
-            MultiFilter copy = new MultiFilter();
+            MultiFilter copy = new MultiFilter(context);
             if (size != null) {
                 copy.setSize(size.getWidth(), size.getHeight());
             }

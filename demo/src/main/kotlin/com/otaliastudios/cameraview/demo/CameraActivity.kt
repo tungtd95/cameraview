@@ -2,9 +2,12 @@ package com.otaliastudios.cameraview.demo
 
 import android.animation.ValueAnimator
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.content.pm.PackageManager.PERMISSION_GRANTED
-import android.graphics.*
+import android.graphics.BitmapFactory
+import android.graphics.ImageFormat
+import android.graphics.PointF
+import android.graphics.Rect
+import android.graphics.YuvImage
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
@@ -13,16 +16,22 @@ import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.otaliastudios.cameraview.*
+import com.otaliastudios.cameraview.CameraException
+import com.otaliastudios.cameraview.CameraListener
+import com.otaliastudios.cameraview.CameraLogger
+import com.otaliastudios.cameraview.CameraOptions
+import com.otaliastudios.cameraview.CameraView
+import com.otaliastudios.cameraview.PictureResult
+import com.otaliastudios.cameraview.VideoResult
 import com.otaliastudios.cameraview.controls.Facing
 import com.otaliastudios.cameraview.controls.Mode
 import com.otaliastudios.cameraview.controls.Preview
 import com.otaliastudios.cameraview.filter.Filters
 import com.otaliastudios.cameraview.frame.Frame
 import com.otaliastudios.cameraview.frame.FrameProcessor
+import com.otaliastudios.cameraview.test.EmojiFilter
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.util.*
 
 class CameraActivity : AppCompatActivity(), View.OnClickListener, OptionView.Callback {
 
@@ -38,12 +47,16 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener, OptionView.Cal
 
     private var currentFilter = 0
     private val allFilters = Filters.values()
+    private val filter by lazy {
+        EmojiFilter(this, null)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_camera)
         CameraLogger.setLogLevel(CameraLogger.LEVEL_VERBOSE)
         camera.setLifecycleOwner(this)
+        camera.filter = filter
         camera.addCameraListener(Listener())
         if (USE_FRAME_PROCESSOR) {
             camera.addFrameProcessor(object : FrameProcessor {
@@ -273,8 +286,8 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener, OptionView.Cal
             message("Can't record HQ videos while in PICTURE mode.", false)
         }
         if (camera.isTakingPicture || camera.isTakingVideo) return
-        message("Recording for 5 seconds...", true)
-        camera.takeVideo(File(filesDir, "video.mp4"), 5000)
+        camera.takeVideo(File(filesDir, "video.mp4"), 11000)
+        filter.start()
     }
 
     private fun captureVideoSnapshot() {
@@ -297,25 +310,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener, OptionView.Cal
     }
 
     private fun changeCurrentFilter() {
-        if (camera.preview != Preview.GL_SURFACE) return run {
-            message("Filters are supported only when preview is Preview.GL_SURFACE.", true)
-        }
-        if (currentFilter < allFilters.size - 1) {
-            currentFilter++
-        } else {
-            currentFilter = 0
-        }
-        val filter = allFilters[currentFilter]
-        message(filter.toString(), false)
-
-        // Normal behavior:
-        camera.filter = filter.newInstance()
-
-        // To test MultiFilter:
-        // DuotoneFilter duotone = new DuotoneFilter();
-        // duotone.setFirstColor(Color.RED);
-        // duotone.setSecondColor(Color.GREEN);
-        // camera.setFilter(new MultiFilter(duotone, filter.newInstance()));
+        captureVideo()
     }
 
     override fun <T : Any> onValueChanged(option: Option<T>, value: T, name: String): Boolean {

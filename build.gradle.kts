@@ -1,7 +1,7 @@
 
 buildscript {
 
-    extra["minSdkVersion"] = 15
+    extra["minSdkVersion"] = 18
     extra["compileSdkVersion"] = 31
     extra["targetSdkVersion"] = 31
 

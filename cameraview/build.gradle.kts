@@ -38,6 +38,8 @@ dependencies {
     api("com.google.android.gms:play-services-tasks:17.2.1")
     implementation("androidx.annotation:annotation:1.2.0")
     implementation("com.otaliastudios.opengl:egloo:0.6.1")
+    implementation("com.tencent.tav:libpag:4.2.77")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.9")
 }
 
 // Publishing
