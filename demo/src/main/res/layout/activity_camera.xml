@@ -21,6 +21,8 @@
         app:cameraGrid="off"
         app:cameraFlash="auto"
         app:cameraAudio="on"
+        app:cameraPreviewFrameRate="30"
+        app:cameraPreviewFrameRateExact="true"
         app:cameraFacing="front"
         app:cameraGestureTap="autoFocus"
         app:cameraGestureLongTap="none"

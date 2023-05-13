@@ -57,6 +57,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener, OptionView.Cal
         CameraLogger.setLogLevel(CameraLogger.LEVEL_VERBOSE)
         camera.setLifecycleOwner(this)
         camera.filter = filter
+        camera.videoBitRate = 24883200
         camera.addCameraListener(Listener())
         if (USE_FRAME_PROCESSOR) {
             camera.addFrameProcessor(object : FrameProcessor {
@@ -298,7 +299,8 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener, OptionView.Cal
             message("Video snapshots are only allowed with the GL_SURFACE preview.", true)
         }
         message("Recording snapshot for 5 seconds...", true)
-        camera.takeVideoSnapshot(File(filesDir, "video.mp4"), 5000)
+        camera.takeVideoSnapshot(File(filesDir, "video.mp4"), 11000)
+        filter.start()
     }
 
     private fun toggleCamera() {
@@ -310,7 +312,10 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener, OptionView.Cal
     }
 
     private fun changeCurrentFilter() {
-        captureVideo()
+        if (camera.preview != Preview.GL_SURFACE) return run {
+            message("Filters are supported only when preview is Preview.GL_SURFACE.", true)
+        }
+        captureVideoSnapshot()
     }
 
     override fun <T : Any> onValueChanged(option: Option<T>, value: T, name: String): Boolean {
