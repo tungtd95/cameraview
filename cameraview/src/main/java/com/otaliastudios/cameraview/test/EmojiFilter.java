@@ -1,6 +1,7 @@
 package com.otaliastudios.cameraview.test;
 
 import android.content.Context;
+import android.net.Uri;
 import android.opengl.GLES20;
 import android.os.Handler;
 import android.os.Looper;
@@ -15,6 +16,8 @@ import com.otaliastudios.opengl.program.GlProgram;
 import com.otaliastudios.opengl.program.GlTextureProgram;
 import com.otaliastudios.opengl.texture.GlFramebuffer;
 import com.otaliastudios.opengl.texture.GlTexture;
+
+import java.net.URI;
 import java.util.List;
 import kotlin.Lazy;
 import kotlin.LazyKt;

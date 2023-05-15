@@ -174,7 +174,12 @@ public class MultiFilter implements Filter, OneParameterFilter, TwoParameterFilt
 
     private void maybeCreateFramebuffer(@NonNull Filter filter, boolean isFirst, boolean isLast) {
         State state = states.get(filter);
-        assert state != null;
+        if (isLast) {
+            //noinspection ConstantConditions
+            state.sizeChanged = false;
+            return;
+        }
+        //noinspection ConstantConditions
         if (state.sizeChanged) {
             maybeDestroyFramebuffer(filter);
             state.sizeChanged = false;
@@ -271,9 +276,11 @@ public class MultiFilter implements Filter, OneParameterFilter, TwoParameterFilt
                 maybeCreateProgram(filter, isFirst, isLast);
                 maybeCreateFramebuffer(filter, isFirst, isLast);
 
-                updateProgressValue();
-                pagPlayer.setProgress(progress);
-                pagPlayer.flush();
+                if (isLast) {
+                    updateProgressValue();
+                    pagPlayer.setProgress(progress);
+                    pagPlayer.flush();
+                }
 
                 GLES20.glUseProgram(state.programHandle);
 

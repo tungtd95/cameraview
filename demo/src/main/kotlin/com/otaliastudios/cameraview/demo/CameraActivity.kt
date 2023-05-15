@@ -57,7 +57,9 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener, OptionView.Cal
         CameraLogger.setLogLevel(CameraLogger.LEVEL_VERBOSE)
         camera.setLifecycleOwner(this)
         camera.filter = filter
-        camera.videoBitRate = 24883200
+        camera.previewFrameRateExact = true
+        camera.previewFrameRate = 30f
+        camera.videoBitRate = (camera.width * camera.height * camera.previewFrameRate * 0.25).toInt()
         camera.addCameraListener(Listener())
         if (USE_FRAME_PROCESSOR) {
             camera.addFrameProcessor(object : FrameProcessor {
