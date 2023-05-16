@@ -289,7 +289,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener, OptionView.Cal
             message("Can't record HQ videos while in PICTURE mode.", false)
         }
         if (camera.isTakingPicture || camera.isTakingVideo) return
-        camera.takeVideo(File(filesDir, "video.mp4"), 11000)
+        camera.takeVideo(File(filesDir, "video.mp4"), 14000)
         filter.start()
     }
 
@@ -301,7 +301,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener, OptionView.Cal
             message("Video snapshots are only allowed with the GL_SURFACE preview.", true)
         }
         message("Recording snapshot for 5 seconds...", true)
-        camera.takeVideoSnapshot(File(filesDir, "video.mp4"), 11000)
+        camera.takeVideoSnapshot(File(filesDir, "video.mp4"), 14000)
         filter.start()
     }
 

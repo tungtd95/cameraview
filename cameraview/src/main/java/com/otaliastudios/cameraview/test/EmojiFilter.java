@@ -288,7 +288,7 @@ public final class EmojiFilter implements Filter {
         this.pagPlayer = new PAGPlayer();
         this.status = Status.PREPARE;
         if (this.pagFile == null) {
-            this.pagFile = PAGFile.Load(context.getAssets(), "emoji.pag");
+            this.pagFile = PAGFile.Load(context.getAssets(), "Start_Animation_2.pag");
         }
         this.lastTime = -1L;
         this.timeSpace = 15000.0f;
@@ -390,25 +390,25 @@ public final class EmojiFilter implements Filter {
         createFrameBuffer();
         updateProgressValue();
         float f = this.progress;
-        if (f > 0.23333333333333334d && f < 0.24666666666666667d) {
+        if (f > 0.225d && f < 0.24375f) {
             this.state1.useProgram();
             this.state1.bindBuffer();
             this.state1.draw(j, transformMatrix);
         }
         float f2 = this.progress;
-        if (f2 > 0.36666666666666664d && f2 < 0.38d) {
+        if (f2 > 0.39375d && f2 < 0.4125d) {
             this.state2.useProgram();
             this.state2.bindBuffer();
             this.state2.draw(j, transformMatrix);
         }
         float f3 = this.progress;
-        if (f3 > 0.5d && f3 < 0.5133333333333333d) {
+        if (f3 > 0.56875d && f3 < 0.5875d) {
             this.state3.useProgram();
             this.state3.bindBuffer();
             this.state3.draw(j, transformMatrix);
         }
         float f4 = this.progress;
-        if (f4 > 0.6333333333333333d && f4 < 0.6466666666666666d) {
+        if (f4 > 0.73125d && f4 < 0.75d) {
             this.state4.useProgram();
             this.state4.bindBuffer();
             this.state4.draw(j, transformMatrix);
@@ -461,7 +461,7 @@ public final class EmojiFilter implements Filter {
                 PAGImage FromTexture = PAGImage.FromTexture(outputTexture2.getId(), 3553, this.state1.getSize().getWidth(), this.state1.getSize().getHeight(), true);
                 FromTexture.setScaleMode(3);
                 Unit unit = Unit.INSTANCE;
-                pAGFile.replaceImage(28, FromTexture);
+                pAGFile.replaceImage(57, FromTexture);
             }
         }
         if (this.state2.createFrameBuffer()) {
@@ -473,7 +473,7 @@ public final class EmojiFilter implements Filter {
                 PAGImage FromTexture2 = PAGImage.FromTexture(outputTexture3.getId(), 3553, this.state2.getSize().getWidth(), this.state2.getSize().getHeight(), true);
                 FromTexture2.setScaleMode(3);
                 Unit unit2 = Unit.INSTANCE;
-                pAGFile2.replaceImage(27, FromTexture2);
+                pAGFile2.replaceImage(39, FromTexture2);
             }
         }
         State state2 = this.state3;
@@ -486,7 +486,7 @@ public final class EmojiFilter implements Filter {
                 PAGImage FromTexture3 = PAGImage.FromTexture(outputTexture4.getId(), 3553, state2.getSize().getWidth(), state2.getSize().getHeight(), true);
                 FromTexture3.setScaleMode(3);
                 Unit unit3 = Unit.INSTANCE;
-                pAGFile3.replaceImage(26, FromTexture3);
+                pAGFile3.replaceImage(23, FromTexture3);
             }
         }
         State state3 = this.state4;
@@ -499,7 +499,7 @@ public final class EmojiFilter implements Filter {
                 PAGImage FromTexture4 = PAGImage.FromTexture(outputTexture5.getId(), 3553, state3.getSize().getWidth(), state3.getSize().getHeight(), true);
                 FromTexture4.setScaleMode(3);
                 Unit unit4 = Unit.INSTANCE;
-                pAGFile4.replaceImage(25, FromTexture4);
+                pAGFile4.replaceImage(16, FromTexture4);
             }
         }
         String str = this.TAG;
