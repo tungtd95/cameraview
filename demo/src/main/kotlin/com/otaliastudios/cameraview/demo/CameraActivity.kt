@@ -11,7 +11,6 @@ import android.graphics.YuvImage
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
-import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -56,10 +55,6 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener, OptionView.Cal
         setContentView(R.layout.activity_camera)
         CameraLogger.setLogLevel(CameraLogger.LEVEL_VERBOSE)
         camera.setLifecycleOwner(this)
-        camera.filter = filter
-        camera.previewFrameRateExact = true
-        camera.previewFrameRate = 30f
-        camera.videoBitRate = (camera.width * camera.height * camera.previewFrameRate * 0.25).toInt()
         camera.addCameraListener(Listener())
         if (USE_FRAME_PROCESSOR) {
             camera.addFrameProcessor(object : FrameProcessor {
@@ -98,55 +93,8 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener, OptionView.Cal
         findViewById<View>(R.id.captureVideoSnapshot).setOnClickListener(this)
         findViewById<View>(R.id.toggleCamera).setOnClickListener(this)
         findViewById<View>(R.id.changeFilter).setOnClickListener(this)
-        val group = controlPanel.getChildAt(0) as ViewGroup
         val watermark = findViewById<View>(R.id.watermark)
-        val options: List<Option<*>> = listOf(
-                // Layout
-                Option.Width(), Option.Height(),
-                // Engine and preview
-                Option.Mode(), Option.Engine(), Option.Preview(),
-                // Some controls
-                Option.Flash(), Option.WhiteBalance(), Option.Hdr(),
-                Option.PictureMetering(), Option.PictureSnapshotMetering(),
-                Option.PictureFormat(),
-                // Video recording
-                Option.PreviewFrameRate(), Option.VideoCodec(), Option.Audio(), Option.AudioCodec(),
-                // Gestures
-                Option.Pinch(), Option.HorizontalScroll(), Option.VerticalScroll(),
-                Option.Tap(), Option.LongTap(),
-                // Watermarks
-                Option.OverlayInPreview(watermark),
-                Option.OverlayInPictureSnapshot(watermark),
-                Option.OverlayInVideoSnapshot(watermark),
-                // Frame Processing
-                Option.FrameProcessingFormat(),
-                // Other
-                Option.Grid(), Option.GridColor(), Option.UseDeviceOrientation()
-        )
-        val dividers = listOf(
-                // Layout
-                false, true,
-                // Engine and preview
-                false, false, true,
-                // Some controls
-                false, false, false, false, false, true,
-                // Video recording
-                false, false, false, true,
-                // Gestures
-                false, false, false, false, true,
-                // Watermarks
-                false, false, true,
-                // Frame Processing
-                true,
-                // Other
-                false, false, true
-        )
-        for (i in options.indices) {
-            val view = OptionView<Any>(this)
-            view.setOption(options[i] as Option<Any>, this)
-            view.setHasDivider(dividers[i])
-            group.addView(view, MATCH_PARENT, WRAP_CONTENT)
-        }
+
         controlPanel.viewTreeObserver.addOnGlobalLayoutListener {
             BottomSheetBehavior.from(controlPanel).state = BottomSheetBehavior.STATE_HIDDEN
         }
@@ -177,11 +125,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener, OptionView.Cal
 
     private inner class Listener : CameraListener() {
         override fun onCameraOpened(options: CameraOptions) {
-            val group = controlPanel.getChildAt(0) as ViewGroup
-            for (i in 0 until group.childCount) {
-                val view = group.getChildAt(i) as OptionView<*>
-                view.onCameraOpened(camera, options)
-            }
+            camera.filter = filter
         }
 
         override fun onCameraError(exception: CameraException) {
@@ -289,7 +233,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener, OptionView.Cal
             message("Can't record HQ videos while in PICTURE mode.", false)
         }
         if (camera.isTakingPicture || camera.isTakingVideo) return
-        camera.takeVideo(File(filesDir, "video.mp4"), 14000)
+        camera.takeVideo(File(filesDir, "video.mp4"), 16000)
         filter.start()
     }
 
@@ -300,8 +244,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener, OptionView.Cal
         if (camera.preview != Preview.GL_SURFACE) return run {
             message("Video snapshots are only allowed with the GL_SURFACE preview.", true)
         }
-        message("Recording snapshot for 5 seconds...", true)
-        camera.takeVideoSnapshot(File(filesDir, "video.mp4"), 14000)
+        camera.takeVideoSnapshot(File(filesDir, "video.mp4"), 16000)
         filter.start()
     }
 

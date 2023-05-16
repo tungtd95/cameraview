@@ -291,7 +291,7 @@ public final class EmojiFilter implements Filter {
             this.pagFile = PAGFile.Load(context.getAssets(), "Start_Animation_2.pag");
         }
         this.lastTime = -1L;
-        this.timeSpace = 15000.0f;
+        this.timeSpace = 16000.0f;
         this.isDrawPag = true;
     }
 
