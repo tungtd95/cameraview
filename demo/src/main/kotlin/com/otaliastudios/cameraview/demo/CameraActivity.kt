@@ -28,6 +28,7 @@ import com.otaliastudios.cameraview.controls.Preview
 import com.otaliastudios.cameraview.filter.Filters
 import com.otaliastudios.cameraview.frame.Frame
 import com.otaliastudios.cameraview.frame.FrameProcessor
+import com.otaliastudios.cameraview.test.Emoji4Filter
 import com.otaliastudios.cameraview.test.EmojiFilter
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -46,7 +47,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener, OptionView.Cal
 
     private var currentFilter = 0
     private val allFilters = Filters.values()
-    private val filter by lazy {
+    private val filter1 by lazy {
         EmojiFilter(this, null)
     }
 
@@ -125,7 +126,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener, OptionView.Cal
 
     private inner class Listener : CameraListener() {
         override fun onCameraOpened(options: CameraOptions) {
-            camera.filter = filter
+            camera.filter = filter1
         }
 
         override fun onCameraError(exception: CameraException) {
@@ -234,7 +235,6 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener, OptionView.Cal
         }
         if (camera.isTakingPicture || camera.isTakingVideo) return
         camera.takeVideo(File(filesDir, "video.mp4"), 16000)
-        filter.start()
     }
 
     private fun captureVideoSnapshot() {
@@ -244,8 +244,8 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener, OptionView.Cal
         if (camera.preview != Preview.GL_SURFACE) return run {
             message("Video snapshots are only allowed with the GL_SURFACE preview.", true)
         }
+        camera.filter = Emoji4Filter(this)
         camera.takeVideoSnapshot(File(filesDir, "video.mp4"), 16000)
-        filter.start()
     }
 
     private fun toggleCamera() {

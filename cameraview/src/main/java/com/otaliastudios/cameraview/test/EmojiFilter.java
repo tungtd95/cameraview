@@ -6,6 +6,7 @@ import android.opengl.GLES20;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+
 import com.otaliastudios.cameraview.filter.BaseFilter;
 import com.otaliastudios.cameraview.filter.Filter;
 import com.otaliastudios.cameraview.filter.NoFilter;
@@ -19,6 +20,7 @@ import com.otaliastudios.opengl.texture.GlTexture;
 
 import java.net.URI;
 import java.util.List;
+
 import kotlin.Lazy;
 import kotlin.LazyKt;
 import kotlin.Metadata;
@@ -27,6 +29,7 @@ import kotlin.collections.CollectionsKt;
 import kotlin.jvm.internal.DefaultConstructorMarker;
 import kotlin.jvm.internal.Intrinsics;
 import kotlin.text.StringsKt;
+
 import org.libpag.PAGFile;
 import org.libpag.PAGImage;
 import org.libpag.PAGPlayer;
@@ -258,7 +261,8 @@ public final class EmojiFilter implements Filter {
             if (this.isChangeSize) {
                 this.isChangeSize = false;
                 releaseBufferTexture();
-                this.outputTexture = new GlTexture(33984, 3553, this.size.getWidth(), this.size.getHeight());
+                this.outputTexture = new GlTexture(GLES20.GL_TEXTURE0,
+                        GLES20.GL_TEXTURE_2D, this.size.getWidth(), this.size.getHeight());
                 GlFramebuffer glFramebuffer = new GlFramebuffer();
                 this.outputFramebuffer = glFramebuffer;
                 GlTexture glTexture = this.outputTexture;
@@ -279,7 +283,7 @@ public final class EmojiFilter implements Filter {
         this.state2 = new State(null, false, 1, null);
         this.state3 = new State(null, false, 1, null);
         this.state4 = new State(null, false, 1, null);
-        this.pagState = new State(null, false, 3, null);
+        this.pagState = new State(new PagFilter(), false);
         this.TAG = "MyFilter";
         this.defaultState = new State(null, false, 3, null);
         State state = new State(null, false, 1, null);
@@ -416,10 +420,8 @@ public final class EmojiFilter implements Filter {
         this.defaultInputState.useProgram();
         this.defaultInputState.bindBuffer();
         this.defaultInputState.draw(j, transformMatrix);
-        if (this.isDrawPag) {
-            getPagPlayer().setProgress(this.progress);
-            getPagPlayer().flush();
-        }
+        getPagPlayer().setProgress(this.progress);
+        getPagPlayer().flush();
         GLES20.glBindFramebuffer(36160, 0);
         GLES20.glEnable(3042);
         GLES20.glBlendFuncSeparate(770, 771, 1, 1);
@@ -427,14 +429,12 @@ public final class EmojiFilter implements Filter {
         this.defaultInputState.bindTexture();
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         this.defaultState.draw(j, Egloo.IDENTITY_MATRIX);
-        if (this.isDrawPag) {
-            this.pagState.useProgram();
-            this.pagState.bindTexture();
-            this.pagState.draw(j, Egloo.IDENTITY_MATRIX);
-        }
-        GLES20.glBindTexture(3553, 0);
-        GLES20.glActiveTexture(33984);
-        GLES20.glDisable(3042);
+        this.pagState.useProgram();
+        this.pagState.bindTexture();
+        this.pagState.draw(j, Egloo.IDENTITY_MATRIX);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        GLES20.glUseProgram(0);
     }
 
     private final void createFrameBuffer() {
