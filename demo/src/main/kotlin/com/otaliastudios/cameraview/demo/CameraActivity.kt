@@ -10,11 +10,8 @@ import android.graphics.Rect
 import android.graphics.YuvImage
 import android.os.Bundle
 import android.view.View
-import android.view.ViewGroup
-import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.otaliastudios.cameraview.CameraException
 import com.otaliastudios.cameraview.CameraListener
 import com.otaliastudios.cameraview.CameraLogger
@@ -22,10 +19,7 @@ import com.otaliastudios.cameraview.CameraOptions
 import com.otaliastudios.cameraview.CameraView
 import com.otaliastudios.cameraview.PictureResult
 import com.otaliastudios.cameraview.VideoResult
-import com.otaliastudios.cameraview.controls.Facing
-import com.otaliastudios.cameraview.controls.Mode
 import com.otaliastudios.cameraview.controls.Preview
-import com.otaliastudios.cameraview.filter.Filters
 import com.otaliastudios.cameraview.frame.Frame
 import com.otaliastudios.cameraview.frame.FrameProcessor
 import com.otaliastudios.cameraview.test.Emoji4Filter
@@ -33,7 +27,7 @@ import com.otaliastudios.cameraview.test.EmojiFilter
 import java.io.ByteArrayOutputStream
 import java.io.File
 
-class CameraActivity : AppCompatActivity(), View.OnClickListener, OptionView.Callback {
+class CameraActivity : AppCompatActivity(), View.OnClickListener {
 
     companion object {
         private val LOG = CameraLogger.create("DemoApp")
@@ -42,14 +36,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener, OptionView.Cal
     }
 
     private val camera: CameraView by lazy { findViewById(R.id.camera) }
-    private val controlPanel: ViewGroup by lazy { findViewById(R.id.controls) }
     private var captureTime: Long = 0
-
-    private var currentFilter = 0
-    private val allFilters = Filters.values()
-    private val filter1 by lazy {
-        EmojiFilter(this, null)
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -87,18 +74,9 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener, OptionView.Cal
                 }
             })
         }
-        findViewById<View>(R.id.edit).setOnClickListener(this)
-        findViewById<View>(R.id.capturePicture).setOnClickListener(this)
-        findViewById<View>(R.id.capturePictureSnapshot).setOnClickListener(this)
-        findViewById<View>(R.id.captureVideo).setOnClickListener(this)
-        findViewById<View>(R.id.captureVideoSnapshot).setOnClickListener(this)
         findViewById<View>(R.id.toggleCamera).setOnClickListener(this)
         findViewById<View>(R.id.changeFilter).setOnClickListener(this)
         val watermark = findViewById<View>(R.id.watermark)
-
-        controlPanel.viewTreeObserver.addOnGlobalLayoutListener {
-            BottomSheetBehavior.from(controlPanel).state = BottomSheetBehavior.STATE_HIDDEN
-        }
 
         // Animate the watermark just to show we record the animation in video snapshots
         val animator = ValueAnimator.ofFloat(1f, 0.8f)
@@ -126,7 +104,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener, OptionView.Cal
 
     private inner class Listener : CameraListener() {
         override fun onCameraOpened(options: CameraOptions) {
-            camera.filter = filter1
+            camera.filter = EmojiFilter(this@CameraActivity, null)
         }
 
         override fun onCameraError(exception: CameraException) {
@@ -186,55 +164,8 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener, OptionView.Cal
 
     override fun onClick(view: View) {
         when (view.id) {
-            R.id.edit -> edit()
-            R.id.capturePicture -> capturePicture()
-            R.id.capturePictureSnapshot -> capturePictureSnapshot()
-            R.id.captureVideo -> captureVideo()
-            R.id.captureVideoSnapshot -> captureVideoSnapshot()
-            R.id.toggleCamera -> toggleCamera()
             R.id.changeFilter -> changeCurrentFilter()
         }
-    }
-
-    override fun onBackPressed() {
-        val b = BottomSheetBehavior.from(controlPanel)
-        if (b.state != BottomSheetBehavior.STATE_HIDDEN) {
-            b.state = BottomSheetBehavior.STATE_HIDDEN
-            return
-        }
-        super.onBackPressed()
-    }
-
-    private fun edit() {
-        BottomSheetBehavior.from(controlPanel).state = BottomSheetBehavior.STATE_COLLAPSED
-    }
-
-    private fun capturePicture() {
-        if (camera.mode == Mode.VIDEO) return run {
-            message("Can't take HQ pictures while in VIDEO mode.", false)
-        }
-        if (camera.isTakingPicture) return
-        captureTime = System.currentTimeMillis()
-        message("Capturing picture...", false)
-        camera.takePicture()
-    }
-
-    private fun capturePictureSnapshot() {
-        if (camera.isTakingPicture) return
-        if (camera.preview != Preview.GL_SURFACE) return run {
-            message("Picture snapshots are only allowed with the GL_SURFACE preview.", true)
-        }
-        captureTime = System.currentTimeMillis()
-        message("Capturing picture snapshot...", false)
-        camera.takePictureSnapshot()
-    }
-
-    private fun captureVideo() {
-        if (camera.mode == Mode.PICTURE) return run {
-            message("Can't record HQ videos while in PICTURE mode.", false)
-        }
-        if (camera.isTakingPicture || camera.isTakingVideo) return
-        camera.takeVideo(File(filesDir, "video.mp4"), 16000)
     }
 
     private fun captureVideoSnapshot() {
@@ -248,35 +179,11 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener, OptionView.Cal
         camera.takeVideoSnapshot(File(filesDir, "video.mp4"), 16000)
     }
 
-    private fun toggleCamera() {
-        if (camera.isTakingPicture || camera.isTakingVideo) return
-        when (camera.toggleFacing()) {
-            Facing.BACK -> message("Switched to back camera!", false)
-            Facing.FRONT -> message("Switched to front camera!", false)
-        }
-    }
-
     private fun changeCurrentFilter() {
         if (camera.preview != Preview.GL_SURFACE) return run {
             message("Filters are supported only when preview is Preview.GL_SURFACE.", true)
         }
         captureVideoSnapshot()
-    }
-
-    override fun <T : Any> onValueChanged(option: Option<T>, value: T, name: String): Boolean {
-        if (option is Option.Width || option is Option.Height) {
-            val preview = camera.preview
-            val wrapContent = value as Int == WRAP_CONTENT
-            if (preview == Preview.SURFACE && !wrapContent) {
-                message("The SurfaceView preview does not support width or height changes. " +
-                        "The view will act as WRAP_CONTENT by default.", true)
-                return false
-            }
-        }
-        option.set(camera, value)
-        BottomSheetBehavior.from(controlPanel).state = BottomSheetBehavior.STATE_HIDDEN
-        message("Changed " + option.name + " to " + name, false)
-        return true
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String?>, grantResults: IntArray) {
